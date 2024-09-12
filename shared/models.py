@@ -44,7 +44,7 @@ class PresetData(BaseModel):
 class EmbeddingSource(str, Enum):
     FTMLM = "ft+mlm"
     OPENAI = "open-ai"
-    MLM = "mlm"
+    MLM = "mini-lm"
 
 
 class ClusteringMethod(str, Enum):
@@ -148,7 +148,7 @@ class ScrapeRequest(BaseRequest):
 class SourceOutput(BaseModel):
     source_id: int
     text: str
-    date: str
+    date: datetime.datetime
     channel_id: int
     reference: str
     embeddings: dict
@@ -185,7 +185,7 @@ class DistancesMetric(str, Enum):
 
 class Entry(BaseModel):
     text: str
-    embeddings: str
+    embeddings: dict[str, list[float]]
 
 
 StoriesNums = list[list[int]]
@@ -209,7 +209,7 @@ class PlotData(BaseModel):
 
 
 class LinkingConfig(BaseRequest):
-    scorer: LinkingScorer = LinkingScorer.WEIGHTED_SCORER
+    scorer: LinkingScorer = LinkingScorer.SILHOUETTE
     metric: DistancesMetric = DistancesMetric.EUCLIDEAN
     embedding_source: EmbeddingSource = EmbeddingSource.OPENAI
     method: ClusteringMethod

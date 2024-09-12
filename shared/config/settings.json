@@ -1,6 +1,6 @@
 {
     "components": {
-        "embedders": ["open-ai"],
+        "embedders": ["mini-lm"],
         "classifier": null,
         "summarizing": ["openai"]
     },
