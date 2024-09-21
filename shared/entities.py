@@ -3,6 +3,7 @@ from typing import ClassVar, List, Tuple
 from uuid import UUID
 
 from pydantic import BaseModel
+from datetime import datetime
 
 
 class Entity(BaseModel):
@@ -71,6 +72,22 @@ class StorySources(Entity):
     embeddings: str
 
     _table_name: ClassVar[str] = "story_sources"
+
+
+class ProcessedIntervals(Entity):
+    l_bound: datetime
+    r_bound: datetime
+    request_id: UUID
+
+    _table_name: ClassVar[str] = "processed_intervals"
+    _pk: ClassVar[str] = "request_id"
+
+
+class RequestSource(Entity):
+    request_id: UUID
+    source_id: UUID
+
+    _table_name: ClassVar[str] = "request_source"
 
 
 class Story(Entity):

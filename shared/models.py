@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from shared.entities import StorySources
 import datetime
+from typing import Optional
 
 
 class JSONSettings(BaseModel):
@@ -140,7 +141,7 @@ class ExternalRequest(BaseRequest):
 class ScrapeRequest(BaseRequest):
     channels: List[int] = [2236047183]
     required_embedders: List[str] | None = ["open-ai"]
-    offset_date: datetime.datetime | None = None
+    offset_date: Optional[datetime.datetime] = None
     end_date: datetime.datetime
     social: bool = False
 

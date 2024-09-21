@@ -56,7 +56,7 @@
       "dash": { "handlers": ["console"], "level": "DEBUG", "propagate": false},
       "telebot": { "handlers": ["console"], "level": "DEBUG", "propagate": false},
       "openai": { "handlers": ["console"], "level": "DEBUG", "propagate": false},
-      "databases": { "handlers": ["console"], "level": "INFO" },
+      "databases": { "handlers": ["console"], "level": "DEBUG" },
       "httpx": { "handlers": ["console"], "level": "INFO" },
       "asgi_correlation_id": { "handlers": ["console"], "level": "INFO" }
     }

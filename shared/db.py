@@ -6,6 +6,7 @@ from databases import Database
 from pydantic import BaseModel, TypeAdapter
 
 from shared.resources import DatabaseConfig
+from datetime import datetime
 
 logger = logging.getLogger("databases")
 
@@ -57,12 +58,13 @@ class AbstractRepository:
             pk = (pk,)
 
         where_clause = " AND ".join(f"{key} = :{key}" for key in pk)
-        query = f"UPDATE {self._table_name} SET {','.join(query_set)} WHERE {where_clause}"
+        query = (
+            f"UPDATE {self._table_name} SET {','.join(query_set)} WHERE {where_clause}"
+        )
         logger.debug(f"Executing query: {query}")
         await self._db.execute(
             query=query,
-            values={k: dump[k] for k in fields}
-            | {key: dump[key] for key in pk},
+            values={k: dump[k] for k in fields} | {key: dump[key] for key in pk},
         )
 
     async def get(self, field=None, value=None) -> List:
@@ -75,9 +77,7 @@ class AbstractRepository:
             rows = await self._db.fetch_all(query=query)
 
         mapped = map(
-            lambda row: TypeAdapter(self._entity).validate_python(
-                dict(row._mapping)
-            ),
+            lambda row: TypeAdapter(self._entity).validate_python(dict(row._mapping)),
             rows,
         )
 
@@ -90,6 +90,19 @@ class PgRepository(AbstractRepository):
             await self.add(entity)
         except UniqueViolationError:
             await self.update(entity, fields)
+
+
+class IntervalRepository(PgRepository):
+    async def get_intersections(self, l_bound: datetime, r_bound: datetime):
+        query = f"SELECT * FROM {self._table_name} WHERE r_bound >= :l_bound and l_bound <= :r_bound"
+
+        rows = await self._db.fetch_all(
+            query=query, values={"l_bound": l_bound, "r_bound": r_bound}
+        )
+
+        mapped = list(map(lambda row: dict(row._mapping), rows))
+
+        return mapped
 
 
 def create_db_string(creds: DatabaseConfig, password: str, username: str):
