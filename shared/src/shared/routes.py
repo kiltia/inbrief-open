@@ -1,6 +1,5 @@
 class ScraperRoutes:
     SCRAPE = "/scrape"
-    SYNC = "/sync"
 
 
 class LinkerRoutes:

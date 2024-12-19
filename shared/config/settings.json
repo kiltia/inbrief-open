@@ -18,12 +18,6 @@
             }
         }
   },
-  "pg_creds": {
-    "driver": "postgres",
-    "url": "db",
-    "port": "5432",
-    "db_name": "inbrief"
-  },
   "logger": {
     "version": 1,
     "disable_existing_loggers": false,

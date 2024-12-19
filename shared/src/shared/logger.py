@@ -2,7 +2,7 @@ import json
 import logging
 from logging.config import dictConfig
 
-from shared.utils import SHARED_CONFIG_PATH
+from .utils import SHARED_CONFIG_PATH
 
 test = "123"
 

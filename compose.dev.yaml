@@ -33,7 +33,6 @@ services:
       # Comment this if you don't want to use hot reload inside containers
       - ./scraper/src:/app/src
       - ./shared:/app/shared
-      - ./openai_api:/app/openai_api
     command: ${FLAGS:-}
     ports:
       - "6003:8000"

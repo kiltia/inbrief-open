@@ -42,10 +42,9 @@ class Request(Entity):
 class Source(Entity):
     source_id: int
     text: str
-    date: str
+    timestamp: datetime
     channel_id: int
     reference: str
-    embeddings: str
     label: str | None = None
     comments: list | None = None
     reactions: str | None = None
@@ -78,6 +77,7 @@ class ProcessedIntervals(Entity):
     l_bound: datetime
     r_bound: datetime
     request_id: UUID
+    channel_id: int
 
     _table_name: ClassVar[str] = "processed_intervals"
     _pk: ClassVar[str] = "request_id"

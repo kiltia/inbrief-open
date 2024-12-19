@@ -5,14 +5,7 @@ from typing import Dict, List
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
 
-from shared.models import JSONSettings
-
-
-class DatabaseConfig(BaseModel):
-    driver: str
-    url: str
-    port: int
-    db_name: str
+from .models import JSONSettings
 
 
 class ComponentSettings(BaseModel):
@@ -35,7 +28,6 @@ class Configuration(BaseModel):
 
 class SharedResources(JSONSettings):
     components: ComponentSettings
-    pg_creds: DatabaseConfig
     config: Configuration
 
     def __init__(self, path: str):

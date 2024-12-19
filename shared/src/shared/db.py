@@ -5,10 +5,18 @@ from asyncpg.exceptions import UniqueViolationError
 from databases import Database
 from pydantic import BaseModel, TypeAdapter
 
-from shared.resources import DatabaseConfig
 from datetime import datetime
 
 logger = logging.getLogger("databases")
+
+
+class DatabaseConfig(BaseModel):
+    driver: str
+    url: str
+    port: int
+    db_name: str
+    username: str
+    password: str
 
 
 class Entity(BaseModel):
@@ -93,11 +101,14 @@ class PgRepository(AbstractRepository):
 
 
 class IntervalRepository(PgRepository):
-    async def get_intersections(self, l_bound: datetime, r_bound: datetime):
-        query = f"SELECT * FROM {self._table_name} WHERE r_bound >= :l_bound and l_bound <= :r_bound"
+    async def get_intersections(
+        self, l_bound: datetime, r_bound: datetime, channel_id: int
+    ):
+        query = f"SELECT * FROM {self._table_name} WHERE r_bound >= :l_bound and l_bound <= :r_bound and channel_id = :channel_id"
 
         rows = await self._db.fetch_all(
-            query=query, values={"l_bound": l_bound, "r_bound": r_bound}
+            query=query,
+            values={"l_bound": l_bound, "r_bound": r_bound, "channel_id": channel_id},
         )
 
         mapped = list(map(lambda row: dict(row._mapping), rows))
@@ -105,5 +116,5 @@ class IntervalRepository(PgRepository):
         return mapped
 
 
-def create_db_string(creds: DatabaseConfig, password: str, username: str):
-    return f"{creds.driver}://{username}:{password}@{creds.url}:{creds.port}/{creds.db_name}"
+def create_db_string(creds: DatabaseConfig):
+    return f"{creds.driver}://{creds.username}:{creds.password}@{creds.url}:{creds.port}/{creds.db_name}"

@@ -1,11 +1,10 @@
 import json
 from enum import Enum
-from typing import List
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from shared.entities import StorySources
+from .entities import StorySources
 import datetime
 from typing import Optional
 
@@ -124,11 +123,17 @@ class Config(BaseModel):
 
 
 class BaseRequest(BaseModel):
-    pass
+    request_id: Optional[UUID] = None
+
+
+class ResponseState(str, Enum):
+    SUCCESS = "success"
+    FAILED = "failed"
 
 
 class BaseResponse(BaseModel):
-    pass
+    state: ResponseState
+    request_id: UUID
 
 
 class ExternalRequest(BaseRequest):
@@ -139,8 +144,7 @@ class ExternalRequest(BaseRequest):
 
 
 class ScrapeRequest(BaseRequest):
-    channels: List[int] = [2236047183]
-    required_embedders: List[str] | None = ["open-ai"]
+    chat_folder_link: str = "https://t.me/addlist/W9JQ42l78Kc5MTAy"
     offset_date: Optional[datetime.datetime] = None
     end_date: datetime.datetime
     social: bool = False
@@ -149,24 +153,29 @@ class ScrapeRequest(BaseRequest):
 class SourceOutput(BaseModel):
     source_id: int
     text: str
-    date: datetime.datetime
+    ts: datetime.datetime
     channel_id: int
     reference: str
-    embeddings: dict
     label: str | None = None
     comments: list | None = None
     reactions: str | None = None
     views: int
 
 
+class ScrapeAction(str, Enum):
+    FULL_SCAN = "full_scan"
+    PARTIAL_SCAN = "partial_scan"
+    CACHED = "cached"
+    FAILED = "fail"
+
+
+class ScrapeInfo(BaseModel):
+    action: ScrapeAction
+    count: int
+
+
 class ScrapeResponse(BaseResponse):
-    sources: list[SourceOutput]
-    skipped_channel_ids: list[int]
-
-
-class SyncRequest(BaseRequest):
-    chat_folder_link: str = "https://t.me/addlist/W9JQ42l78Kc5MTAy"
-
+    actions: dict[int, ScrapeInfo]
 
 # Linker API
 
