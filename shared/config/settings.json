@@ -1,8 +1,6 @@
 {
     "components": {
-        "embedders": ["mini-lm"],
-        "classifier": null,
-        "summarizing": ["openai"]
+        "embedders": ["jina"]
     },
     "config": {
         "category_async_pool_size": 8,
@@ -43,14 +41,14 @@
       }
     },
     "loggers": {
-      "scraper": { "handlers": ["console"], "level": "DEBUG", "propagate": false},
+      "scraper": { "handlers": ["console"], "level": "INFO", "propagate": false},
       "linker": { "handlers": ["console"], "level": "DEBUG", "propagate": false},
       "summarizer": { "handlers": ["console"], "level": "DEBUG", "propagate": false},
       "supervisor": { "handlers": ["console"], "level": "DEBUG", "propagate": false},
       "dash": { "handlers": ["console"], "level": "DEBUG", "propagate": false},
       "telebot": { "handlers": ["console"], "level": "DEBUG", "propagate": false},
       "openai": { "handlers": ["console"], "level": "DEBUG", "propagate": false},
-      "databases": { "handlers": ["console"], "level": "DEBUG" },
+      "databases": { "handlers": ["console"], "level": "WARNING" },
       "httpx": { "handlers": ["console"], "level": "INFO" },
       "asgi_correlation_id": { "handlers": ["console"], "level": "INFO" }
     }

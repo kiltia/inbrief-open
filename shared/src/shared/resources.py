@@ -5,13 +5,11 @@ from typing import Dict, List
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
 
-from .models import JSONSettings
+from .models.settings import JSONSettings
 
 
 class ComponentSettings(BaseModel):
     embedders: List[str]
-    classifier: str | None
-    summarizing: List[str]
 
 
 class Ranking(BaseModel):
