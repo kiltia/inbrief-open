@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scraper
+  namespace: inbrief
+  labels:
+    app.kubernetes.io/name: scraper
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: scraper
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: scraper
+        vector.dev/include: "true"
+    spec:
+      containers:
+      - name: meta
+        image: "inbrief-open-scraper:latest"
+        envFrom:
+        - configMapRef:
+            name: inbrief-scraper-env
+        - secretRef:
+            name: inbrief-scraper-env
+        ports:
+        - name: http-api
+          containerPort: 80
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 100m
+            memory: 1Gi
+        imagePullPolicy: Never
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scraper
+  namespace: inbrief
+  labels:
+    app.kubernetes.io/name: scraper
+spec:
+  selector:
+    app.kubernetes.io/name: scraper
+  ports:
+  - name: http-api
+    port: 80
+    targetPort: http-api
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inbrief-scraper-env
+  namespace: inbrief
+  labels:
+    app.kubernetes.io/name: scraper
+data:
+  MODULE_NAME: scraper.app

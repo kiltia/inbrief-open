@@ -3,29 +3,29 @@ import logging
 import redis
 from rb_tocase import Case
 
-from config import ExporterConfig
+from config import ProviderConfig
 
-logger = logging.getLogger("scraper")
+logger = logging.getLogger("embedder")
 
 
-class BaseExporter:
+class BaseProvider:
     @classmethod
     def get_label(self):
-        return Case.to_kebab(self.__name__).removesuffix("-exporter")
+        return Case.to_kebab(self.__name__).removesuffix("-provider")
 
 
-def init_exporters(config: ExporterConfig):
-    exporters: list[BaseExporter] = []
-    required_exporters = config.required_exporters
-    candidates = BaseExporter.__subclasses__()
-    logger.info(f"Required exporters: {required_exporters}")
+def init_providers(config: ProviderConfig) -> list[BaseProvider]:
+    required_providers = config.required_providers
+    candidates = BaseProvider.__subclasses__()
+    logger.info(f"Required providers: {required_providers}")
+    providers = []
     for exporter in candidates:
-        if exporter.get_label() not in required_exporters:
+        if exporter.get_label() not in required_providers:
             continue
         logger.info(f"Started loading {exporter.get_label()}")
         try:
             obj = exporter(config)
-            exporters.append(obj)
+            providers.append(obj)
         except Exception as e:
             logger.error(
                 f"Got {type(e).__name__} exception while initializing {exporter.get_label()}: {e}"
@@ -33,24 +33,27 @@ def init_exporters(config: ExporterConfig):
             continue
 
         logger.info(f"Finished loading {exporter.get_label()}")
-    return exporters
+    return providers
 
 
-class RedisExporter(BaseExporter):
-    def __init__(self, config: ExporterConfig):
+class RedisProvider(BaseProvider):
+    def __init__(self, config: ProviderConfig):
         self.client = redis.Redis(
             config.redis.host, config.redis.port, db=0, protocol=3
         )
 
-    def export(self, request_id, json_dump):
+    def set(self, request_id, json_dump):
         self.client.set(
             str(request_id),
             json_dump,
         )
 
+    def get(self, request_id):
+        return self.client.get(str(request_id))
 
-# TODO(nrydanov): Add S3 exporter
-class S3Exporter(BaseExporter):
+
+# TODO(nrydanov): Add S3 provider
+class S3Exporter(BaseProvider):
     pass
 
     @classmethod

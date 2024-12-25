@@ -1,15 +1,12 @@
 from datetime import timedelta
-from typing import ClassVar, List, Tuple
+from typing import ClassVar, Tuple
 from uuid import UUID
 
 from pydantic import BaseModel
-from datetime import datetime
 
 
 class Entity(BaseModel):
     pass
-
-
 
 
 class Request(Entity):
@@ -21,12 +18,6 @@ class Request(Entity):
     time_passed: timedelta
 
     _table_name: ClassVar[str] = "request"
-
-
-class SourceEmbeddings(Entity):
-    source_id: int
-    embedder: int
-    embedding: list[float]
 
 
 class StorySource(Entity):
@@ -46,8 +37,6 @@ class StorySources(Entity):
     embeddings: str
 
     _table_name: ClassVar[str] = "story_sources"
-
-
 
 
 class RequestSource(Entity):

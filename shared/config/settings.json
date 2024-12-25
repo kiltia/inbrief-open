@@ -42,6 +42,8 @@
     },
     "loggers": {
       "scraper": { "handlers": ["console"], "level": "INFO", "propagate": false},
+      "embedder": { "handlers": ["console"], "level": "INFO", "propagate": false},
+
       "linker": { "handlers": ["console"], "level": "DEBUG", "propagate": false},
       "summarizer": { "handlers": ["console"], "level": "DEBUG", "propagate": false},
       "supervisor": { "handlers": ["console"], "level": "DEBUG", "propagate": false},
