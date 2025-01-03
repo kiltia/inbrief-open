@@ -12,7 +12,7 @@ logger = logging.getLogger("scraper")
 class BaseExporter:
     @classmethod
     def get_label(cls):
-        return Case.to_kebab(cls.__name__).removesuffix("-exporter")
+        return Case.to_kebab(cls.__name__).removesuffix("-exporter") # pyright: ignore
 
     def export(self, request_id: UUID, json_dump: str):
         raise NotImplementedError

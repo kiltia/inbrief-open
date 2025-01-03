@@ -14,7 +14,7 @@ class BaseProvider:
 
     @classmethod
     def get_label(cls):
-        return Case.to_kebab(self.__name__).removesuffix("-provider")  # pyright:ignore
+        return Case.to_kebab(cls.__name__).removesuffix("-provider")  # pyright:ignore
 
     def get(self, request_id) -> bytes:
         raise NotImplementedError
