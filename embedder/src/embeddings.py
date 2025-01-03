@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Iterator
 
 import torch
 from rb_tocase import Case
@@ -8,9 +9,15 @@ logger = logging.getLogger("embedder")
 
 
 class EmbeddingProvider:
+    def __init__(self, *args) -> None:
+        pass
+
     @classmethod
-    def get_label(self):
-        return Case.to_kebab(self.__name__).removesuffix("-embedder")
+    def get_label(cls):
+        return Case.to_kebab(cls.__name__).removesuffix("-embedder")  # pyright: ignore
+
+    def get_embeddings(self, inputs: Iterator, **kwargs):
+        raise NotImplementedError()
 
 
 class JinaEmbedder(EmbeddingProvider):
@@ -23,7 +30,7 @@ class JinaEmbedder(EmbeddingProvider):
         self.device = device
         self.model.to(device)
 
-    def get_embeddings(self, inputs: list, **kwargs):
+    def get_embeddings(self, inputs: Iterator, **kwargs):
         results = []
         for input in inputs:
             embedding = self.model.encode(input)

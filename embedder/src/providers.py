@@ -9,8 +9,11 @@ logger = logging.getLogger("embedder")
 
 
 class BaseProvider:
+    def __init__(self, *args) -> None:
+        pass
+
     @classmethod
-    def get_label(self):
+    def get_label(cls):
         return Case.to_kebab(self.__name__).removesuffix("-provider")  # pyright:ignore
 
     def get(self, request_id) -> bytes:
@@ -52,13 +55,4 @@ class RedisProvider(BaseProvider):
         )
 
     def get(self, request_id) -> bytes:
-        return self.client.get(str(request_id))
-
-
-# TODO(nrydanov): Add S3 provider
-class S3Exporter(BaseProvider):
-    pass
-
-    @classmethod
-    def get_label(self):
-        return "s3"
+        return self.client.get(str(request_id))  # pyright:ignore
