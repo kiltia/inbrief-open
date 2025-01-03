@@ -116,5 +116,22 @@ class IntervalRepository(PgRepository):
         return mapped
 
 
+class SourceRepository(PgRepository):
+    async def get_cached(
+        self, channel_id: int, left_bound: datetime, right_bound: datetime
+    ):
+        query = f"SELECT * FROM {self._table_name} WHERE channel_id = :channel_id AND ts <= :right_bound AND ts >= :left_bound"
+        rows = await self._db.fetch_all(
+            query=query,
+            values={
+                "channel_id": channel_id,
+                "right_bound": right_bound,
+                "left_bound": left_bound,
+            },
+        )
+        mapped = list(map(lambda row: dict(row._mapping), rows))
+        return mapped
+
+
 def create_db_string(creds: DatabaseConfig):
     return f"{creds.driver}://{creds.username}:{creds.password}@{creds.url}:{creds.port}/{creds.db_name}"
