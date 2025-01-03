@@ -46,7 +46,6 @@ def init_embedders(
 
     candidates = EmbeddingProvider.__subclasses__()
     for embedder in candidates:
-        print(embedder.get_label())
         if embedder.get_label() not in required_embedders:
             continue
 
