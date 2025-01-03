@@ -10,7 +10,7 @@ from faststream.kafka import KafkaBroker, KafkaMessage
 from shared.logger import configure_logging
 from shared.models.api import ResponseState
 
-from context import ctx
+from context import correlation_id, ctx
 from models import (
     ScrapeRequest,
     ScrapeResponse,
@@ -44,7 +44,7 @@ async def startup(_: ContextRepo):
     logger.info("Started initializing scraper")
     ctx.init_exporters()
     await ctx.init_db()
-    await ctx.client.start()
+    await ctx.client.start()  # pyright: ignore
 
 
 @app.on_shutdown
@@ -60,8 +60,10 @@ async def shutdown(_: ContextRepo):
 async def scraper_consumer(
     request: ScrapeRequest,
     msg: KafkaMessage,
-    request_id: uuid.UUID = faststream.Header(),
+    request_id: uuid.UUID = faststream.Header("correlation_id"),
 ) -> ScrapeResponse:
+    correlation_id.set(str(request_id))
+
     logger.info("Started serving scrapping request")
 
     payload, actions = await scrape_channels(ctx, request, request_id)

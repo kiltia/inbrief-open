@@ -1,3 +1,5 @@
+from contextvars import ContextVar
+
 from databases import Database
 from shared.db import (
     IntervalRepository,
@@ -14,14 +16,16 @@ import config
 from entities import Channel, Folder, ProcessedIntervals, Source
 from exporters import init_exporters
 
+correlation_id = ContextVar("correlation_id", default="-")
+
 
 class Context:
     def __init__(self):
-        self.config = config.Config()
+        self.config = config.Config()  # pyright: ignore
         self.creds = self.config.telegram
         self.client = TelegramClient(
             StringSession(self.creds.session),
-            self.creds.api_id,
+            self.creds.api_id,  # pyright: ignore
             self.creds.api_hash,
             system_version="4.16.30-vxCUSTOM",
         )
