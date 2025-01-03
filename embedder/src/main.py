@@ -7,7 +7,7 @@ import faststream
 import torch
 from databases import Database
 from faststream import ContextRepo, ExceptionMiddleware, FastStream
-from faststream.kafka import KafkaBroker
+from faststream.kafka import KafkaBroker, KafkaMessage
 from pydantic import TypeAdapter
 from shared.db import PgRepository, create_db_string
 from shared.logger import configure_logging
@@ -114,9 +114,12 @@ payload_adapter = TypeAdapter(ResponsePayload)
 
 
 @broker.publisher("inbrief.embedder.out.json")
-@broker.subscriber("inbrief.scraper.out.json")
+@broker.subscriber(
+    "inbrief.scraper.out.json", group_id="embedder", auto_commit=False
+)
 async def embedder_consumer(
     request: ScrapeResponse,
+    msg: KafkaMessage,
 ) -> EmbeddingResponse:
     embedders = ctx.embedders
 
@@ -141,6 +144,8 @@ async def embedder_consumer(
         )
 
         await ctx.embeddings_repo.add(entities, ignore_conflict=True)
+
+    await msg.ack()
 
     return EmbeddingResponse(
         request_id=request.request_id,
