@@ -20,8 +20,8 @@ from embeddings import init_embedders
 from entities import SourceEmbeddings
 from models import (
     EmbeddingResponse,
+    ResponsePayload,
     ScrapeResponse,
-    Source,
 )
 from providers import init_providers
 
@@ -62,7 +62,7 @@ async def shutdown(context: ContextRepo):
 
 class Context:
     def __init__(self):
-        self.config = config.Config()
+        self.config = config.Config()  # pyright: ignore
         self.shared_settings = SharedResources(
             f"{SHARED_CONFIG_PATH}/settings.json"
         )
@@ -110,7 +110,7 @@ class Context:
 ctx = Context()
 
 
-sources_adapter = TypeAdapter(list[Source])
+payload_adapter = TypeAdapter(ResponsePayload)
 
 
 @broker.publisher("inbrief.embedder.out.json")
@@ -120,23 +120,23 @@ async def embedder_consumer(
 ) -> EmbeddingResponse:
     embedders = ctx.embedders
 
-    sources = ctx.providers[0].get(request.request_id).decode("utf-8")
+    payload = ctx.providers[0].get(request.request_id).decode("utf-8")
 
-    sources = sources_adapter.validate_python(json.loads(sources))
+    payload = payload_adapter.validate_python(json.loads(payload))
 
-    logger.debug(f"Got {len(sources)} sources")
+    logger.debug(f"Got {len(payload.gathered)} sources")
     for embedder in embedders:
-        embs = embedder.get_embeddings(map(lambda x: x.text, sources))
+        embs = embedder.get_embeddings(map(lambda x: x.text, payload.gathered))
 
         entities = list(
             map(
-                lambda x: SourceEmbeddings(
+                lambda x: SourceEmbeddings(  # pyright: ignore
                     source_id=x[0].source_id,
                     channel_id=x[0].channel_id,
                     embedder=embedder.get_label(),
                     embedding=x[1],
                 ),
-                zip(sources, embs, strict=True),
+                zip(payload.gathered, embs, strict=True),
             )
         )
 

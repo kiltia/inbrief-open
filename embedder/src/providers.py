@@ -11,7 +11,10 @@ logger = logging.getLogger("embedder")
 class BaseProvider:
     @classmethod
     def get_label(self):
-        return Case.to_kebab(self.__name__).removesuffix("-provider")
+        return Case.to_kebab(self.__name__).removesuffix("-provider")  # pyright:ignore
+
+    def get(self, request_id) -> bytes:
+        raise NotImplementedError
 
 
 def init_providers(config: ProviderConfig) -> list[BaseProvider]:
@@ -48,7 +51,7 @@ class RedisProvider(BaseProvider):
             json_dump,
         )
 
-    def get(self, request_id):
+    def get(self, request_id) -> bytes:
         return self.client.get(str(request_id))
 
 

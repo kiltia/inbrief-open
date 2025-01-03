@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import ClassVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from shared.models.api import BaseResponse
 
 
@@ -41,10 +41,10 @@ class Source(BaseModel):
     _pk: ClassVar[str] = "source_id"
 
 
-class ResponsePayload(BaseModel):
-    cached: list[Source]
-    gathered: list[Source]
-
-
 class EmbeddingResponse(BaseResponse):
     pass
+
+
+class ResponsePayload(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    gathered: list[Source]
