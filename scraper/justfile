@@ -10,4 +10,4 @@ read-response:
     kcat -C -t inbrief.scraper.out.json -b 10.96.11.51:9094
 
 generate-session:
-    cd src && python3 scripts/generate_session.py
+    python3 src/generate_session.py
