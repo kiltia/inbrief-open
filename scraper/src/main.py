@@ -1,21 +1,23 @@
 import json
 import logging
 import os
-import traceback
 import uuid
 
 import faststream
 from faststream import ContextRepo, ExceptionMiddleware, FastStream
 from faststream.kafka import KafkaBroker, KafkaMessage
+from shared.handlers import error_handler
 from shared.logger import configure_logging
 from shared.models.api import ResponseState
 
-from context import correlation_id, ctx
+from context import ctx
 from models import (
     ScrapeRequest,
     ScrapeResponse,
+    ScrapeSuccess,
 )
 from scraper import scrape_channels
+from utils import correlation_id
 
 KAFKA_HOST = os.environ.get("KAFKA_HOST", "kafka")
 
@@ -26,16 +28,7 @@ app = FastStream(broker)
 logger = logging.getLogger("scraper")
 
 
-@exc_middleware.add_handler(Exception, publish=True)
-def error_handler(exc, message=faststream.Context()):
-    tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-    logger.error(tb)
-    return {
-        "state": ResponseState.FAILED,
-        "request_id": message.headers.get("request_id"),
-        "error": str(exc),
-        "error_repr": repr(exc),
-    }
+exc_middleware.add_handler(Exception, publish=True)(error_handler)
 
 
 @app.on_startup
@@ -44,7 +37,7 @@ async def startup(_: ContextRepo):
     logger.info("Started initializing scraper")
     ctx.init_exporters()
     await ctx.init_db()
-    await ctx.client.start()  # pyright: ignore
+    await ctx.client.start()  # type: ignore
 
 
 @app.on_shutdown
@@ -62,7 +55,7 @@ async def scraper_consumer(
     msg: KafkaMessage,
     request_id: uuid.UUID = faststream.Header("correlation_id"),
 ) -> ScrapeResponse:
-    correlation_id.set(str(request_id))
+    correlation_id.set(request_id)
 
     logger.info("Started serving scrapping request")
 
@@ -78,7 +71,7 @@ async def scraper_consumer(
 
     await msg.ack()
 
-    return ScrapeResponse(
+    return ScrapeSuccess(
         request_id=request_id,
         state=ResponseState.SUCCESS,
         actions=actions,

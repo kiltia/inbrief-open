@@ -2,13 +2,10 @@ import json
 import logging
 from logging.config import dictConfig
 
-from .utils import SHARED_CONFIG_PATH
+from shared.utils import SHARED_CONFIG_PATH, correlation_id
 
-test = "123"
 
 def configure_logging(override_path=None) -> None:
-    from functools import partial, partialmethod
-
     if override_path is not None:
         path = override_path
     else:
@@ -17,7 +14,11 @@ def configure_logging(override_path=None) -> None:
         d = json.load(f)
         dictConfig(d["logger"])
 
-    logging.TRACE = logging.DEBUG - 5
-    logging.addLevelName(logging.TRACE, "TRACE")
-    logging.Logger.trace = partialmethod(logging.Logger.log, logging.TRACE)
-    logging.trace = partial(logging.log, logging.TRACE)
+
+class CorrelationIdFilter(logging.Filter):
+    def filter(self, record):
+        try:
+            record.correlation_id = str(correlation_id.get())
+        except LookupError:
+            record.correlation_id = "-"
+        return True

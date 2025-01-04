@@ -1,5 +1,3 @@
-from contextvars import ContextVar
-
 from databases import Database
 from shared.db import (
     IntervalRepository,
@@ -7,16 +5,14 @@ from shared.db import (
     SourceRepository,
     create_db_string,
 )
+from shared.entities.scraper import Channel, Folder, ProcessedIntervals, Source
 from shared.resources import SharedResources
 from shared.utils import SHARED_CONFIG_PATH
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 
 import config
-from entities import Channel, Folder, ProcessedIntervals, Source
 from exporters import init_exporters
-
-correlation_id = ContextVar("correlation_id", default="-")
 
 
 class Context:

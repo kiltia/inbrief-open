@@ -5,11 +5,11 @@ from telethon.sessions import StringSession
 
 from config import Config
 
-creds = Config().telegram
+creds = Config().telegram  # type: ignore
 
 with TelegramClient(
     StringSession(),
-    creds.api_id,
+    creds.api_id,  # type: ignore
     creds.api_hash,
     system_version="4.16.30-vxCUSTOM",
 ) as client:

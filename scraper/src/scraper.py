@@ -1,18 +1,18 @@
 import asyncio
 import json
 import logging
+import uuid
 from concurrent.futures._base import TimeoutError
 from datetime import datetime
-from uuid import UUID
 
 from pydantic import TypeAdapter
+from shared.entities.scraper import Channel, Folder, ProcessedIntervals, Source
 from telethon.errors.rpcbaseerrors import BadRequestError
 from telethon.errors.rpcerrorlist import ChannelPrivateError, MsgIdInvalidError
 from telethon.tl.functions.channels import GetFullChannelRequest
 from telethon.tl.functions.chatlists import CheckChatlistInviteRequest
 
 from context import Context
-from entities import Channel, Folder, ProcessedIntervals, Source
 from models import (
     ResponsePayload,
     ScrapeAction,
@@ -72,7 +72,7 @@ def get_worker(
     channel_entity,
     ctx,
     social: bool,
-    request_id: UUID,
+    request_id: uuid.UUID,
 ):
     client = ctx.client
 
@@ -82,7 +82,9 @@ def get_worker(
         logger.debug(f"Started getting content for {message.id}")
         logger.debug("Parsing data from Telegram")
         content = {
-            "source_id": message.id,
+            "source_id": uuid.uuid5(
+                uuid.NAMESPACE_OID, f"{channel_entity.id}-{message.id}"
+            ),
             "text": message.message,
             "ts": message.date,
             "reference": f"t.me/{channel_entity.username}/{message.id}",
@@ -185,7 +187,7 @@ async def retrieve_channels(ctx, chat_folder_link: str) -> list[int]:
 async def scrape_channels(
     ctx: Context,
     request: ScrapeRequest,
-    request_id: UUID,
+    request_id: uuid.UUID,
 ) -> tuple[ResponsePayload, dict[int, ScrapeInfo]]:
     logger.debug("Getting all required embedders")
 
@@ -212,16 +214,17 @@ async def scrape_channels(
             )
             continue
 
-        info = (await client(GetFullChannelRequest(channel_id))).full_chat
-        logger.debug(f"Scraping channel: {channel_entity.id}")
+        info = (await client(GetFullChannelRequest(channel_id))).full_chat  # type: ignore
+        logger.debug(f"Scraping channel: {channel_entity.id}")  # type: ignore
         channel = Channel(
             channel_id=info.id,
-            title=channel_entity.title,
+            title=channel_entity.title,  # type: ignore
             about=info.about,
             subscribers=info.participants_count,
         )
         await ctx.channel_repository.add_or_update(
-            channel, fields=["title", "about", "subscribers"]
+            channel,  # type: ignore
+            fields=["title", "about", "subscribers"],
         )
 
         overlaps = await ctx.intervals_repository.get_intersections(
@@ -273,7 +276,6 @@ async def scrape_channels(
                 count=len(response),
             )
 
-    # TODO(nrydanov): Add cached sources to payload output
     return ResponsePayload(
         cached=cached_sources, gathered=gathered_sources
     ), result

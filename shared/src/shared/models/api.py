@@ -15,3 +15,8 @@ class ResponseState(str, Enum):
 class BaseResponse(BaseModel):
     state: ResponseState
     request_id: UUID
+
+
+class ErrorMessage(BaseResponse):
+    error: str
+    error_repr: str

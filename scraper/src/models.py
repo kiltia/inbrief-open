@@ -1,11 +1,14 @@
 from datetime import datetime
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Union
 
 from pydantic import BaseModel, Field
-from shared.models.api import BaseRequest, BaseResponse
-
-from entities import Source
+from shared.entities.scraper import Source
+from shared.models.api import (
+    BaseRequest,
+    BaseResponse,
+    ErrorMessage,
+)
 
 
 class ScrapeRequest(BaseRequest):
@@ -30,8 +33,11 @@ class ScrapeInfo(BaseModel):
     count: int
 
 
-class ScrapeResponse(BaseResponse):
+class ScrapeSuccess(BaseResponse):
     actions: dict[int, ScrapeInfo]
+
+
+ScrapeResponse = Union[ScrapeSuccess, ErrorMessage]
 
 
 class ResponsePayload(BaseModel):

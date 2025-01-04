@@ -6,6 +6,7 @@ from databases import Database
 from pydantic import BaseModel, TypeAdapter
 
 from datetime import datetime
+from uuid import UUID
 
 logger = logging.getLogger("databases")
 
@@ -84,12 +85,14 @@ class AbstractRepository:
         else:
             rows = await self._db.fetch_all(query=query)
 
-        mapped = map(
-            lambda row: TypeAdapter(self._entity).validate_python(dict(row._mapping)),
-            rows,
+        return list(
+            map(
+                lambda row: TypeAdapter(self._entity).validate_python(
+                    dict(row._mapping)
+                ),
+                rows,
+            )
         )
-
-        return list(mapped)
 
 
 class PgRepository(AbstractRepository):
@@ -111,9 +114,7 @@ class IntervalRepository(PgRepository):
             values={"l_bound": l_bound, "r_bound": r_bound, "channel_id": channel_id},
         )
 
-        mapped = list(map(lambda row: dict(row._mapping), rows))
-
-        return mapped
+        return list(map(lambda row: dict(row._mapping), rows))
 
 
 class SourceRepository(PgRepository):
@@ -129,8 +130,14 @@ class SourceRepository(PgRepository):
                 "left_bound": left_bound,
             },
         )
-        mapped = list(map(lambda row: dict(row._mapping), rows))
-        return mapped
+        return list(map(lambda row: dict(row._mapping), rows))
+
+
+class EmbeddingRepository(PgRepository):
+    async def get_by_ids(self, ids: list[UUID]):
+        query = f"SELECT * FROM {self._table_name} WHERE source_id = ANY(:ids)"
+        rows = await self._db.fetch_all(query=query, values={"ids": ids})
+        return list(map(lambda row: dict(row._mapping), rows))
 
 
 def create_db_string(creds: DatabaseConfig):

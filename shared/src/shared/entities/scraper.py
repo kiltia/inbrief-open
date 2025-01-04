@@ -1,26 +1,21 @@
+from shared.entities.common import Entity
+from pydantic import Field
+from uuid import UUID
 from datetime import datetime
 from typing import ClassVar
-from uuid import UUID
-
-from pydantic import BaseModel, Field
-from typing_extensions import Annotated, Optional
-
-
-class Entity(BaseModel):
-   created_at: Annotated[Optional[datetime], Field(default_factory=datetime.now)] = None
+from shared.utils import correlation_id
 
 
 class Source(Entity):
-    source_id: int
+    source_id: UUID
     text: str
     ts: datetime
     channel_id: int
     reference: str
-    label: str | None = None
     comments: list | None = None
     reactions: str | None = None
     views: int
-    request_id: UUID | None = None
+    request_id: UUID = Field(default_factory=correlation_id.get)
 
     _table_name: ClassVar[str] = "source"
     _pk: ClassVar[str] = "source_id"

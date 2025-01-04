@@ -1,30 +1,21 @@
 from datetime import datetime
 from enum import Enum
 
-from optional import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Annotated, Union
 
-from .request import BaseRequest, BaseResponse
+from shared.models.api import BaseRequest, BaseResponse, ErrorMessage
+from shared.entities.scraper import Source
 
 
 class ScrapeRequest(BaseRequest):
     chat_folder_link: str = "https://t.me/addlist/W9JQ42l78Kc5MTAy"
-    offset_date: Optional[datetime.datetime] = None
-    end_date: datetime.datetime
+    right_bound: Annotated[
+        datetime, Field(default_factory=lambda _: datetime.now().astimezone())
+    ]
+    left_bound: datetime
     social: bool = False
     exporters: list[str] = []
-
-
-class SourceOutput(BaseModel):
-    source_id: int
-    text: str
-    ts: datetime.datetime
-    channel_id: int
-    reference: str
-    label: str | None = None
-    comments: list | None = None
-    reactions: str | None = None
-    views: int
 
 
 class ScrapeAction(str, Enum):
@@ -39,5 +30,13 @@ class ScrapeInfo(BaseModel):
     count: int
 
 
-class ScrapeResponse(BaseResponse):
+class ScrapeSuccess(BaseResponse):
     actions: dict[int, ScrapeInfo]
+
+
+ScrapeResponse = Union[ScrapeSuccess, ErrorMessage]
+
+
+class ResponsePayload(BaseModel):
+    cached: list[Source]
+    gathered: list[Source]

@@ -1,11 +1,14 @@
 import logging
 
-from context import correlation_id
+from utils import correlation_id
 
 logger = logging.getLogger("scraper")
 
 
 class CorrelationIdFilter(logging.Filter):
     def filter(self, record):
-        record.correlation_id = correlation_id.get()
+        try:
+            record.correlation_id = str(correlation_id.get())
+        except LookupError:
+            record.correlation_id = "-"
         return True

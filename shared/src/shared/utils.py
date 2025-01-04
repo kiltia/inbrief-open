@@ -2,6 +2,7 @@ import re
 import string
 
 import numpy as np
+from contextvars import ContextVar
 from numpy.linalg import norm
 
 from .patterns import emoji_pattern
@@ -35,3 +36,6 @@ def clean_text(text, remove_punctuation=False):
     if remove_punctuation:
         text = text.translate(str.maketrans("", "", string.punctuation + "«»" + "—"))
     return text
+
+
+correlation_id = ContextVar("correlation_id")

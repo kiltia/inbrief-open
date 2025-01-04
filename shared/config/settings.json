@@ -21,7 +21,7 @@
     "disable_existing_loggers": false,
     "filters": {
       "correlation_id": {
-        "()": "log.CorrelationIdFilter"
+        "()": "shared.logger.CorrelationIdFilter"
       }
     },
     "formatters": {

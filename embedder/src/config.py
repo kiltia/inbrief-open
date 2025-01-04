@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from shared.db import DatabaseConfig
 
@@ -8,12 +8,23 @@ class RedisConfig(BaseModel):
     port: int
 
 
-class ProviderConfig(BaseModel):
-    required_providers: list[str]
+class JsonConfig(BaseModel):
+    path: str
+
+
+class ConnectorConfig(BaseModel):
+    required_importer: str
+    required_exporters: list[str]
     redis: RedisConfig
+    json_config: JsonConfig = Field(alias="json")
+
 
 class EmbedderConfig(BaseModel):
     required_embedders: list[str]
+
+
+class KafkaConfig(BaseModel):
+    session_timeout_ms: int = 1200 * 1000
 
 
 class Config(BaseSettings):
@@ -23,5 +34,6 @@ class Config(BaseSettings):
     )
 
     database: DatabaseConfig
-    providers: ProviderConfig
+    connectors: ConnectorConfig
     embedders: EmbedderConfig
+    kafka: KafkaConfig

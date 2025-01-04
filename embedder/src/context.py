@@ -1,20 +1,17 @@
 import logging
-from contextvars import ContextVar
 
 import torch
 from databases import Database
-from shared.db import PgRepository, create_db_string
+from shared.db import EmbeddingRepository, create_db_string
+from shared.entities.embedder import SourceEmbeddings
 from shared.resources import SharedResources
 from shared.utils import SHARED_CONFIG_PATH
 
 import config
+from connectors import init_connectors
 from embeddings import init_embedders
-from entities import SourceEmbeddings
-from providers import init_providers
 
 logger = logging.getLogger("embedder")
-
-correlation_id = ContextVar("correlation_id", default="-")
 
 
 class Context:
@@ -26,7 +23,7 @@ class Context:
         self.pg = Database(
             create_db_string(self.config.database),
         )
-        self.embeddings_repo = PgRepository(self.pg, SourceEmbeddings)
+        self.embeddings_repo = EmbeddingRepository(self.pg, SourceEmbeddings)
         self.embedders = []
 
     async def init_db(self):
@@ -60,8 +57,8 @@ class Context:
             self.config.embedders.required_embedders, device
         )
 
-    def init_providers(self):
-        self.providers = init_providers(self.config.providers)
+    def init_connectors(self):
+        self.connectors = init_connectors(self.config.connectors)
 
 
 ctx = Context()
