@@ -22,6 +22,9 @@ class BaseConnector:
     def export(self, request_id, json_dump):
         raise NotImplementedError
 
+    def delete(self, request_id):
+        raise NotImplementedError
+
 
 def init_connectors(config: ConnectorConfig) -> list[BaseConnector]:
     required_connectors = list(
@@ -61,6 +64,9 @@ class RedisConnector(BaseConnector):
 
     def import_from(self, request_id) -> bytes:
         return self.client.get(str(request_id))  # pyright:ignore
+
+    def delete(self, request_id):
+        self.client.delete(str(request_id))
 
 
 class FileConnector(BaseConnector):

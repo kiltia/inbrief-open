@@ -69,6 +69,8 @@ async def embedder_consumer(
             payload=json.dumps(payload, default=pydantic_encoder),
         )
     )
+
+    importer.delete(request_id)
     logger.debug("Successfully persisted request to inbox")
 
     return EmbedderSuccess(
