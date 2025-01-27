@@ -1,9 +1,13 @@
 import logging
+import os
 
 import torch
 from databases import Database
-from shared.db import EmbeddingRepository, create_db_string
-from shared.entities.embedder import SourceEmbeddings
+from faststream import ExceptionMiddleware, FastStream
+from faststream.kafka import KafkaBroker
+from shared.db import EmbeddingRepository, InboxRepository, create_db_string
+from shared.entities.embedder import EmbeddingTask, SourceEmbeddings
+from shared.handlers import error_handler
 from shared.resources import SharedResources
 from shared.utils import SHARED_CONFIG_PATH
 
@@ -12,6 +16,16 @@ from connectors import init_connectors
 from embeddings import init_embedders
 
 logger = logging.getLogger("embedder")
+
+WORKER_ID = os.environ.get("WORKER_ID", "worker-0")
+KAFKA_HOST = os.environ.get("KAFKA_HOST", "kafka")
+
+exc_middleware = ExceptionMiddleware()
+broker = KafkaBroker(KAFKA_HOST, middlewares=[exc_middleware])
+app = FastStream(broker)
+
+
+exc_middleware.add_handler(Exception, publish=True)(error_handler)
 
 
 class Context:
@@ -24,6 +38,7 @@ class Context:
             create_db_string(self.config.database),
         )
         self.embeddings_repo = EmbeddingRepository(self.pg, SourceEmbeddings)
+        self.inbox_repository = InboxRepository(self.pg, EmbeddingTask)
         self.embedders = []
 
     async def init_db(self):

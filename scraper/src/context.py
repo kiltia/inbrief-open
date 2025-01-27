@@ -1,6 +1,8 @@
 import os
 
 from databases import Database
+from faststream import ExceptionMiddleware, FastStream
+from faststream.kafka import KafkaBroker
 from shared.db import (
     InboxRepository,
     IntervalRepository,
@@ -9,6 +11,7 @@ from shared.db import (
     create_db_string,
 )
 from shared.entities.scraper import Channel, Folder, ProcessedIntervals, Source
+from shared.handlers import error_handler
 from shared.models.scraper import ScrapeRequest
 from shared.resources import SharedResources
 from shared.utils import SHARED_CONFIG_PATH
@@ -19,6 +22,14 @@ import config
 from exporters import init_exporters
 
 WORKER_ID = os.environ.get("WORKER_ID", "unknown")
+KAFKA_HOST = os.environ.get("KAFKA_HOST", "kafka")
+
+exc_middleware = ExceptionMiddleware()
+broker = KafkaBroker(KAFKA_HOST, middlewares=[exc_middleware])
+
+app = FastStream(broker)
+
+exc_middleware.add_handler(Exception, publish=True)(error_handler)
 
 
 class Context:

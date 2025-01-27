@@ -3,10 +3,11 @@ import json
 import logging
 
 from pydantic import TypeAdapter
+from pydantic.json import pydantic_encoder
 from shared.entities.scraper import ScrapeTask
 from shared.models.api import ResponseState
 
-from context import WORKER_ID, ctx
+from context import WORKER_ID, broker, ctx
 from models import (
     ScrapeSuccess,
 )
@@ -39,13 +40,22 @@ async def task_executor():
 
         await ctx.inbox_repository.commit_task(task.request_id, WORKER_ID)
 
+        await broker.publish(
+            topic="inbrief.embedder.in",
+            message="",
+            headers={"correlation_id": str(task.request_id)},
+        )
+
 
 async def execute_task(task: ScrapeTask):
     request_id = task.request_id
     payload, actions = await scrape_channels(ctx, task, request_id)
 
     payload_json = json.dumps(
-        payload.model_dump(), default=str, sort_keys=True, ensure_ascii=False
+        payload.gathered,
+        sort_keys=True,
+        ensure_ascii=False,
+        default=pydantic_encoder,
     )
 
     for exporter in ctx.exporters:

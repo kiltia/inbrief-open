@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Union
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 from shared.entities.embedder import SourceEmbeddings
 from shared.entities.scraper import Source
 from shared.models.api import ErrorMessage
@@ -11,10 +11,7 @@ from shared.models.embedder import EmbedderSuccess
 EmbedderResponse = Union[EmbedderSuccess, ErrorMessage]
 
 
-class ResponsePayload(BaseModel):
-    model_config = ConfigDict(extra="allow")
-    gathered: list[Source]
-    cached: list[Source]
+ResponsePayload = list[Source]
 
 
 class ExportedSource(BaseModel):

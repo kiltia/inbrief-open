@@ -1,38 +1,24 @@
+import asyncio
 import json
 import logging
-import os
 import uuid
 
 import faststream
-from faststream import ContextRepo, ExceptionMiddleware, FastStream
-from faststream.kafka import KafkaBroker, KafkaMessage
+from faststream import ContextRepo
 from pydantic import TypeAdapter
-from shared.entities.embedder import SourceEmbeddings
-from shared.handlers import error_handler
+from pydantic.json import pydantic_encoder
+from shared.entities.embedder import EmbeddingTask
 from shared.logger import configure_logging
-from shared.models.api import ResponseState
+from shared.models.api import BaseResponse, ResponseState
 from shared.models.embedder import EmbedderSuccess
-from shared.models.scraper import ScrapeResponse
 
 from connectors import get_connector
-from context import ctx
+from context import app, broker, ctx
+from executor import task_executor
 from models import (
-    EmbedderResponse,
-    ErrorMessage,
-    ExportedSource,
     ResponsePayload,
 )
 from utils import correlation_id
-
-KAFKA_HOST = os.environ.get("KAFKA_HOST", "kafka")
-
-exc_middleware = ExceptionMiddleware()
-broker = KafkaBroker(KAFKA_HOST, middlewares=[exc_middleware])
-app = FastStream(broker)
-
-
-exc_middleware.add_handler(Exception, publish=True)(error_handler)
-
 
 logger = logging.getLogger("embedder")
 
@@ -43,6 +29,7 @@ async def startup(_: ContextRepo):
     await ctx.init_db()
     ctx.init_embedders()
     ctx.init_connectors()
+    asyncio.create_task(task_executor())
 
 
 @app.on_shutdown
@@ -51,93 +38,40 @@ async def shutdown(_: ContextRepo):
 
 
 payload_adapter = TypeAdapter(ResponsePayload)
-embeddings_adapter = TypeAdapter(list[SourceEmbeddings])
 
 
-@broker.publisher("inbrief.embedder.out.json")
 @broker.subscriber(
-    "inbrief.scraper.out.json",
-    group_id="embedder",
-    auto_commit=False,
-    session_timeout_ms=ctx.config.kafka.session_timeout_ms,
+    "inbrief.embedder.in", group_id="embedder-group", auto_commit=False
 )
+@broker.publisher("inbrief.events.json")
 async def embedder_consumer(
-    message: ScrapeResponse,
-    msg: KafkaMessage,
     request_id: uuid.UUID = faststream.Header("correlation_id"),
-) -> EmbedderResponse:
-    embedders = ctx.embedders
-
+) -> BaseResponse:
+    logger.debug(f"Received request {request_id}")
     correlation_id.set(str(request_id))
-
-    if isinstance(message, ErrorMessage):
-        return message
 
     importer = get_connector(
         ctx.config.connectors.required_importer, ctx.connectors
     )
-    payload = importer.import_from(message.request_id).decode("utf-8")
+    logger.debug(f"Importing request body from {request_id}")
+    payload = importer.import_from(request_id).decode("utf-8")
+
+    logger.debug(f"Got {len(payload)} sources")
+    logger.debug(f"Source payload example: {payload[0]}")
 
     payload = payload_adapter.validate_python(json.loads(payload))
 
-    logger.debug(f"Got {len(payload.gathered)} sources")
-    embeddings = {}
-    for embedder in embedders:
-        embs = embedder.get_embeddings(
-            map(lambda x: f"separation:{x.text}", payload.gathered),
-            truncate_dim=128,
+    logger.debug("Persisting request to inbox")
+    await ctx.inbox_repository.add(
+        EmbeddingTask(
+            request_id=request_id,
+            embedder="jina",
+            payload=json.dumps(payload, default=pydantic_encoder),
         )
-
-        entities = list(
-            map(
-                lambda x: SourceEmbeddings(  # pyright: ignore
-                    source_id=x[0].source_id,
-                    embedder=embedder.get_label(),
-                    embedding=x[1],
-                ),
-                zip(payload.gathered, embs, strict=True),
-            )
-        )
-
-        embeddings[embedder.get_label()] = embs
-        await ctx.embeddings_repo.add(entities, ignore_conflict=True)
-
-    if len(ctx.config.connectors.required_exporters) > 0:
-        ids = set(list(map(lambda x: x.source_id, payload.gathered)))
-
-        grouped = {}
-
-        stored = embeddings_adapter.validate_python(
-            await ctx.embeddings_repo.get_by_ids(ids)
-        )
-
-        for e in stored:
-            grouped.setdefault(e.source_id, []).append(e)
-
-        exported_sources = list(
-            map(
-                lambda x: ExportedSource._from(
-                    x, grouped.setdefault(x.source_id, [])
-                ),
-                payload.gathered,
-            )
-        )
-
-        for exporter in ctx.config.connectors.required_exporters:
-            connector = get_connector(exporter, ctx.connectors)
-            connector.export(
-                request_id,
-                json.dumps(
-                    list(map(lambda x: x.model_dump(), exported_sources)),
-                    default=str,
-                    sort_keys=True,
-                    ensure_ascii=False,
-                ),
-            )
-
-    await msg.ack()
+    )
+    logger.debug("Successfully persisted request to inbox")
 
     return EmbedderSuccess(
-        request_id=message.request_id,
-        state=ResponseState.SUCCESS,
+        request_id=request_id,
+        state=ResponseState.ACCEPTED,
     )
