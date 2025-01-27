@@ -6,7 +6,13 @@ from concurrent.futures._base import TimeoutError
 from datetime import datetime
 
 from pydantic import TypeAdapter
-from shared.entities.scraper import Channel, Folder, ProcessedIntervals, Source
+from shared.entities.scraper import (
+    Channel,
+    Folder,
+    ProcessedIntervals,
+    ScrapeTask,
+    Source,
+)
 from telethon.errors.rpcbaseerrors import BadRequestError
 from telethon.errors.rpcerrorlist import ChannelPrivateError, MsgIdInvalidError
 from telethon.tl.functions.channels import GetFullChannelRequest
@@ -17,7 +23,6 @@ from models import (
     ResponsePayload,
     ScrapeAction,
     ScrapeInfo,
-    ScrapeRequest,
 )
 
 logger = logging.getLogger("scraper")
@@ -186,7 +191,7 @@ async def retrieve_channels(ctx, chat_folder_link: str) -> list[int]:
 
 async def scrape_channels(
     ctx: Context,
-    request: ScrapeRequest,
+    request: ScrapeTask,
     request_id: uuid.UUID,
 ) -> tuple[ResponsePayload, dict[int, ScrapeInfo]]:
     logger.debug("Getting all required embedders")

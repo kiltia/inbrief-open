@@ -1,7 +1,6 @@
 import logging
 from typing import ClassVar, List, Optional, Type
 
-from asyncpg.exceptions import UniqueViolationError
 from databases import Database
 from pydantic import BaseModel, TypeAdapter
 
@@ -96,11 +95,23 @@ class AbstractRepository:
 
 
 class PgRepository(AbstractRepository):
-    async def add_or_update(self, entity: Entity, fields: List[str]):
-        try:
-            await self.add(entity)
-        except UniqueViolationError:
-            await self.update(entity, fields)
+    async def add_or_update(self, entities, fields: list[str]):
+        if not isinstance(entities, list):
+            entities = [entities]
+
+        if entities == []:
+            return
+
+        dumps = list(map(lambda x: x.model_dump(), entities))
+
+        columns, placeholders = self._get_query_parameters(dumps[0])
+
+        query = f"INSERT INTO {self._table_name}({columns}) VALUES ({placeholders})"
+        logger.debug(f"Executing query: {query}")
+
+        query += f" ON CONFLICT ({self._entity._pk}) DO UPDATE SET {",".join(map(lambda x: f"{x} = EXCLUDED.{x}", fields))}"
+
+        await self._db.execute_many(query=query, values=dumps)
 
 
 class IntervalRepository(PgRepository):
@@ -134,10 +145,25 @@ class SourceRepository(PgRepository):
 
 
 class EmbeddingRepository(PgRepository):
-    async def get_by_ids(self, ids: list[UUID]):
+    async def get_by_ids(self, ids: set[UUID]):
         query = f"SELECT * FROM {self._table_name} WHERE source_id = ANY(:ids)"
         rows = await self._db.fetch_all(query=query, values={"ids": ids})
         return list(map(lambda row: dict(row._mapping), rows))
+
+
+class InboxRepository(PgRepository):
+    async def get_next(self, worker_id: str):
+        query = f"SELECT * FROM {self._table_name} WHERE status = 'pending' or (status='in_progress' and worker_id = :worker_id) ORDER BY created_at ASC LIMIT 1"
+        row = await self._db.fetch_one(query=query, values={"worker_id": worker_id})
+        if row is None:
+            return None
+        return dict(row._mapping)
+
+    async def commit_task(self, request_id, worker_id, state="done"):
+        query = f"UPDATE {self._table_name} SET status = :state, worker_id = :worker_id WHERE request_id = :request_id"
+        await self._db.execute(
+            query=query, values={"request_id": request_id, "state": state, "worker_id": worker_id}
+        )
 
 
 def create_db_string(creds: DatabaseConfig):

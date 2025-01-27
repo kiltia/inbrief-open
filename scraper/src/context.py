@@ -1,11 +1,15 @@
+import os
+
 from databases import Database
 from shared.db import (
+    InboxRepository,
     IntervalRepository,
     PgRepository,
     SourceRepository,
     create_db_string,
 )
 from shared.entities.scraper import Channel, Folder, ProcessedIntervals, Source
+from shared.models.scraper import ScrapeRequest
 from shared.resources import SharedResources
 from shared.utils import SHARED_CONFIG_PATH
 from telethon import TelegramClient
@@ -13,6 +17,8 @@ from telethon.sessions import StringSession
 
 import config
 from exporters import init_exporters
+
+WORKER_ID = os.environ.get("WORKER_ID", "unknown")
 
 
 class Context:
@@ -37,6 +43,7 @@ class Context:
         self.intervals_repository = IntervalRepository(
             self.pg, ProcessedIntervals
         )
+        self.inbox_repository = InboxRepository(self.pg, ScrapeRequest)
 
     async def init_db(self):
         await self.pg.connect()

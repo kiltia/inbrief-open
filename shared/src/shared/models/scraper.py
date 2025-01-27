@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field
-from typing import Annotated, Union
+from typing import Annotated, Union, ClassVar
 
 from shared.models.api import BaseRequest, BaseResponse, ErrorMessage
 from shared.entities.scraper import Source
@@ -16,6 +16,8 @@ class ScrapeRequest(BaseRequest):
     left_bound: datetime
     social: bool = False
     exporters: list[str] = []
+
+    _table_name: ClassVar[str] = "scrape_inbox"
 
 
 class ScrapeAction(str, Enum):

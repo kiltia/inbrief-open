@@ -6,6 +6,18 @@ from typing import ClassVar
 from shared.utils import correlation_id
 
 
+
+class ScrapeTask(Entity):
+    request_id: UUID
+    chat_folder_link: str
+    right_bound: datetime
+    left_bound: datetime
+    social: bool = False
+    exporters: list[str] = []
+
+    _table_name: ClassVar[str] = "scrape_inbox"
+
+
 class Source(Entity):
     source_id: UUID
     text: str

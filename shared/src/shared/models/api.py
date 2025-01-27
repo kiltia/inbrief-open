@@ -4,11 +4,12 @@ from enum import Enum
 
 
 class BaseRequest(BaseModel):
-    request_id: UUID | None = None
+    pass
 
 
 class ResponseState(str, Enum):
     SUCCESS = "success"
+    ACCEPTED = "accepted"
     FAILED = "failed"
 
 

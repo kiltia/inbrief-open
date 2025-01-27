@@ -9,3 +9,7 @@ class SourceEmbeddings(Entity):
     embedding: list[float]
 
     _table_name: ClassVar[str] = "embeddings"
+
+
+class EmbedderInbox(Entity):
+    source_id: UUID

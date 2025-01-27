@@ -4,6 +4,20 @@ CREATE DATABASE inbrief;
 
 CREATE TYPE embedder AS ENUM ('jina');
 
+CREATE TYPE inbox_status AS ENUM ('pending', 'in_progress', 'done');
+
+CREATE TABLE scrape_inbox (
+    request_id uuid NOT NULL PRIMARY KEY,
+    chat_folder_link varchar(64) NOT NULL,
+    right_bound timestamp WITH TIME ZONE NOT NULL,
+    left_bound timestamp WITH TIME ZONE NOT NULL,
+    social boolean NOT NULL,
+    exporters varchar(64)[] NOT NULL,
+    created_at timestamp WITH TIME ZONE NOT NULL,
+    status inbox_status DEFAULT 'pending',
+    worker_id varchar(64),
+);
+
 CREATE TABLE channel (
     channel_id bigint NOT NULL PRIMARY KEY,
     title varchar(64) NOT NULL,
