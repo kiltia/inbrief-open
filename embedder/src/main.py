@@ -83,7 +83,10 @@ async def embedder_consumer(
     logger.debug(f"Got {len(payload.gathered)} sources")
     embeddings = {}
     for embedder in embedders:
-        embs = embedder.get_embeddings(map(lambda x: x.text, payload.gathered))
+        embs = embedder.get_embeddings(
+            map(lambda x: f"separation:{x.text}", payload.gathered),
+            truncate_dim=128,
+        )
 
         entities = list(
             map(
@@ -100,8 +103,7 @@ async def embedder_consumer(
         await ctx.embeddings_repo.add(entities, ignore_conflict=True)
 
     if len(ctx.config.connectors.required_exporters) > 0:
-        all = payload.cached + payload.gathered
-        ids = list(map(lambda x: x.source_id, all))
+        ids = set(list(map(lambda x: x.source_id, payload.gathered)))
 
         grouped = {}
 
@@ -117,7 +119,7 @@ async def embedder_consumer(
                 lambda x: ExportedSource._from(
                     x, grouped.setdefault(x.source_id, [])
                 ),
-                all,
+                payload.gathered,
             )
         )
 

@@ -33,7 +33,7 @@ class JinaEmbedder(EmbeddingProvider):
     def get_embeddings(self, inputs: Iterator, **kwargs):
         results = []
         for input in inputs:
-            embedding = self.model.encode(input)
+            embedding = self.model.encode(input, **kwargs)
 
             results.append(embedding)
         return results
